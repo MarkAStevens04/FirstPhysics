@@ -149,7 +149,6 @@ class Simulation:
 
         # gravity
         for obj in self.objects:
-                # obj.calculateForce(defForce)
                 obj.modifyVelocity([0, self.grav * self.dt])
 
     def _translate(self):

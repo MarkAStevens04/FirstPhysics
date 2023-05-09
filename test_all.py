@@ -18,7 +18,7 @@ screen = pygame.display.set_mode((SCREEN_X, SCREEN_Y), pygame.SCALED)
 pygame.display.set_caption("Test cases")
 FPS = 100
 DEBUG = True
-stepSize = 1
+stepSize = 0.1
 true_gravity = 1000
 precision = 0.00000000001
 FPSsim = 60
@@ -395,13 +395,16 @@ def test_single_drop() -> None:
 
     ball1.modifyVelocity([0, 0])
 
-    num_steps = 800
+    num_steps = 100 * (1 / stepSize)
     curr_step = 1
+
+    i2 = 1
+    i2max = 5
 
     base_assertions = simulation_assertions(sim1)
     running = True
     print()
-    print('KE         |  Grav Potential  |  Total KE   |   y Pos  |  y Velocity')
+    print('KE         |  Grav Potential  |  Total  E   |   y Pos  |  y Velocity')
     while running and curr_step <= num_steps:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -415,11 +418,17 @@ def test_single_drop() -> None:
         GravPE = base_assertions._GravPotential_single_calculation(ball1)
         KinE = base_assertions._KE_single_calculation(ball1, 1)
 
-        if curr_step % 10 == 0:
+        if curr_step % (20 * (1/stepSize)) == 0:
             # print(f'KE            : {KinE:010.2f}')
             # print(f'Grav Potential:           {GravPE:010.2f}')
             # print(f'total KE      :                  {KinE + GravPE:010.2f}')
             print(f'{KinE:010.2f}    {GravPE:010.2f}        {KinE + GravPE:010.2f}     {ball1.y:05.2f}    {ball1.velocity[1]:.2f}')
+            if i2 == 1:
+                startingTotalE = KinE + GravPE
+            if i2 == 5:
+                finishingTotalE = KinE + GravPE
+                print(f'difference is: {finishingTotalE - startingTotalE:.2f}')
+            i2 += 1
 
 
 
@@ -468,7 +477,7 @@ def test_high_speed() -> None:
     # newLine2.setFollowObject(ball2)
 
     # number of secs sim should run
-    num_steps = 300
+    num_steps = 300 * (1/stepSize)
     curr_step = 1
 
     base_assertions = simulation_assertions(sim1)
@@ -521,7 +530,7 @@ def test_vertical_drop() -> None:
     sim1.addObjectToSimulation(newBall)
     sim1.addObjectToSimulation(ball2)
 
-    num_steps = 800
+    num_steps = 800 * (1/stepSize)
     curr_step = 1
 
     base_assertions = simulation_assertions(sim1)

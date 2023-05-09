@@ -8,7 +8,7 @@ import global_
 visualize = True
 show_fps = True
 global_.COLORIFY = False
-global_.DEBUG = True
+global_.DEBUG = False
 
 # SETUP
 SCREEN_X = 1390
@@ -29,7 +29,6 @@ dt = 1/FPSsim * stepSize
 BACKGROUND = (0, 0, 0)
 BALL_COLOR = (100, 100, 100)
 BORDER_COLOR = (255, 100, 100)
-
 DEBUG_COLOR = (100, 255, 100)
 
 
@@ -62,6 +61,16 @@ class simulation_assertions:
 
         mom_y = abs(self._momentum_in_direction('y'))
         self.init_momentum_y = [mom_y - (self.accuracy_needed * mom_y) - precision, mom_y + (self.accuracy_needed * mom_y) + precision]
+
+        # create a lower and upper bound for energy in each axis
+        ene_x = abs(self._energy_in_direction('x'))
+        self.init_energy_x = [ene_x - (self.accuracy_needed * ene_x) - precision,
+                                ene_x + (self.accuracy_needed * ene_x) + precision]
+
+        ene_y = abs(self._energy_in_direction('y'))
+        self.init_energy_y = [ene_y - (self.accuracy_needed * ene_y) - precision,
+                                ene_y + (self.accuracy_needed * ene_y) + precision]
+
 
     def _get_initial_objs(self) -> set:
         """
@@ -99,10 +108,15 @@ class simulation_assertions:
 
     def _momentum_in_direction(self, axis: str) -> float:
         """
-        Sums the total momentum in a given direction
+        Sums the total momentum in a given direction.
+
+        * NOTE *
+        momentum is NOT conserved in the y-axis because we do not track
+        gravity.
         :param axis: 'x' or 'y'
         :return: float of total momentum on that axis
         """
+        momentum = 0
         if axis == 'x':
             i = 0
         elif axis == 'y':
@@ -111,50 +125,154 @@ class simulation_assertions:
             print('INVALID AXIS')
             raise SyntaxError
 
-        momentum = 0
         for obj in self.sim.objects:
             momentum += obj.velocity[i] * obj.mass
 
         return momentum
 
-    def run_assertions(self):
+    def _energy_in_direction(self, axis: str) -> float:
+        """
+        Calculates the energy for a given axis.
+        ONLY cares about KE and potential energy due to gravity
+
+        :param axis: 'x' or 'y'
+        :return: float corresponding to energy at the given simulation state.
+        """
+        energy = 0
+        if axis == 'x':
+            i = 0
+        elif axis == 'y':
+            i = 1
+            # account for gravitational potential energy
+            for obj in self.sim.objects:
+                distance_to_bottom = self.sim.y2 - self.sim.buffer - obj.y
+                energy += obj.mass * self.sim.grav * distance_to_bottom
+        else:
+            print('INVALID AXIS')
+            raise SyntaxError
+
+        for obj in self.sim.objects:
+            # calculate and add the kinetic energy
+            energy += (1/2) * obj.mass * (obj.velocity[i] ** 2)
+
+        return energy
+
+    def object_assertions(self) -> None:
+        """
+        Performs assertions for all objects in the simulation.
+        Checks all objects still exist, and that all objects are within the bounds
+        :return:
+        """
+        # number of objects in simulation is same at end as in beginning
+        if len(self.init_objs) != len(self._get_initial_objs()):
+            print('objects have disappeared from simulation')
+            assert len(self.init_objs) == len(self._get_initial_objs()), 'objects have disappeared from the simulation'
+
+        # all objects exist in the bounds
+        self._check_bounds()
+
+    def momentum_assertion(self, axis: str) -> None:
+        """
+        Performs momentum assertions on the given axis
+        :param axis: either 'x' or 'y'
+        :return: None
+        """
+        if axis == 'x':
+            if abs(self._momentum_in_direction('x')) < self.init_momentum_x[0] or abs(self._momentum_in_direction('x')) > self.init_momentum_x[1]:
+                print(f'momentum not conserved in x axis!')
+                print(f'actual: {abs(self._momentum_in_direction("x")):.2f}')
+                print(f"expect: {self.init_momentum_x[0]:.2f}, {self.init_momentum_x[1]:.2f}")
+
+                assert abs(self._momentum_in_direction('x')) >= self.init_momentum_x[0]
+                assert abs(self._momentum_in_direction('x')) <= self.init_momentum_x[1]
+        elif axis == 'y':
+            if abs(self._momentum_in_direction('y')) < self.init_momentum_y[0] or abs(
+                    self._momentum_in_direction('y')) > \
+                    self.init_momentum_y[1]:
+                print('momentum not conserved in y axis!')
+                print(f'actual: {abs(self._momentum_in_direction("y")):.2f}')
+                print(f"expect: {self.init_momentum_y[0]:.2f}, {self.init_momentum_y[1]:.2f}")
+
+                assert abs(self._momentum_in_direction('y')) >= self.init_momentum_y[0]
+                assert abs(self._momentum_in_direction('y')) <= self.init_momentum_y[1]
+
+    def energy_assertion(self, axis: str) -> None:
+        """
+        Performs energy assertions on the given axis
+        :param axis: either 'x' or 'y'
+        :return: None
+        """
+        if axis == 'x':
+            if abs(self._energy_in_direction('x')) < self.init_energy_x[0] or abs(self._energy_in_direction('x')) > \
+                    self.init_energy_x[1]:
+                print('energy not conserved in x axis!')
+                print(f'actual: {abs(self._energy_in_direction("x")):.2f}')
+                print(f"expect: {self.init_energy_x[0]:.2f}, {self.init_energy_x[1]:.2f}")
+
+                assert abs(self._energy_in_direction('x')) >= self.init_energy_x[0]
+                assert abs(self._energy_in_direction('x')) <= self.init_energy_x[1]
+        elif axis == 'y':
+            if abs(self._energy_in_direction('y')) < self.init_energy_y[0] or abs(self._energy_in_direction('y')) > \
+                    self.init_energy_y[1]:
+                print('energy not conserved in y axis!')
+                print(f'actual: {abs(self._energy_in_direction("y")):.2f}')
+                print(f"expect: {self.init_energy_y[0]:.2f}, {self.init_energy_y[1]:.2f}")
+
+                assert abs(self._energy_in_direction('y')) >= self.init_energy_y[0]
+                assert abs(self._energy_in_direction('y')) <= self.init_energy_y[1]
+
+    def run_all_assertions(self):
         """
         Runs many tests to ensure the simulation behaves as expected
         :return:
         """
         print()
-        # number of objects in simulation is same at end as in beginning
-        if len(self.init_objs) != len(self._get_initial_objs()):
-            print('objects have disappeared from simulation')
-            assert len(self.init_objs) == len(self._get_initial_objs()), 'objects have disappeared from the simulation'
-        print('all objects remain')
-        print()
-
-        # check bounds
-        self._check_bounds()
-        print('all objects in bounds')
-        print()
-
-        # check momentum
-        if abs(self._momentum_in_direction('x')) < self.init_momentum_x[0] or abs(self._momentum_in_direction('x')) > self.init_momentum_x[1]:
-            print('momentum not conserved in x axis!')
-            print(f'actual: {abs(self._momentum_in_direction("x")):.2f}')
-            print(f"expect: {self.init_momentum_x[0]:.2f}, {self.init_momentum_x[1]:.2f}")
-
-            assert abs(self._momentum_in_direction('x')) >= self.init_momentum_x[0]
-            assert abs(self._momentum_in_direction('x')) <= self.init_momentum_x[1]
-
-        if abs(self._momentum_in_direction('y')) < self.init_momentum_y[0] or abs(self._momentum_in_direction('y')) > \
-                self.init_momentum_y[1]:
-            print('momentum not conserved in y axis!')
-            print(f'actual: {abs(self._momentum_in_direction("y")):.2f}')
-            print(f"expect: {self.init_momentum_y[0]:.2f}, {self.init_momentum_y[1]:.2f}")
-
-            assert abs(self._momentum_in_direction('y')) >= self.init_momentum_y[0]
-            assert abs(self._momentum_in_direction('y')) <= self.init_momentum_y[1]
-
-        print('all momentum conserved!')
-
+        self.object_assertions()
+        self.momentum_assertion('x')
+        self.energy_assertion('x')
+        self.energy_assertion('y')
+        #
+        # # check momentum
+        # if abs(self._momentum_in_direction('x')) < self.init_momentum_x[0] or abs(self._momentum_in_direction('x')) > self.init_momentum_x[1]:
+        #     print('momentum not conserved in x axis!')
+        #     print(f'actual: {abs(self._momentum_in_direction("x")):.2f}')
+        #     print(f"expect: {self.init_momentum_x[0]:.2f}, {self.init_momentum_x[1]:.2f}")
+        #
+        #     assert abs(self._momentum_in_direction('x')) >= self.init_momentum_x[0]
+        #     assert abs(self._momentum_in_direction('x')) <= self.init_momentum_x[1]
+        #
+        # if abs(self._momentum_in_direction('y')) < self.init_momentum_y[0] or abs(self._momentum_in_direction('y')) > \
+        #         self.init_momentum_y[1]:
+        #     print('momentum not conserved in y axis!')
+        #     print(f'actual: {abs(self._momentum_in_direction("y")):.2f}')
+        #     print(f"expect: {self.init_momentum_y[0]:.2f}, {self.init_momentum_y[1]:.2f}")
+        #
+        #     assert abs(self._momentum_in_direction('y')) >= self.init_momentum_y[0]
+        #     assert abs(self._momentum_in_direction('y')) <= self.init_momentum_y[1]
+        #
+        # print('all momentum conserved!')
+        # print()
+        #
+        # # check energy
+        # if abs(self._energy_in_direction('x')) < self.init_energy_x[0] or abs(self._energy_in_direction('x')) > self.init_energy_x[1]:
+        #     print('energy not conserved in x axis!')
+        #     print(f'actual: {abs(self._energy_in_direction("x")):.2f}')
+        #     print(f"expect: {self.init_energy_x[0]:.2f}, {self.init_energy_x[1]:.2f}")
+        #
+        #     assert abs(self._energy_in_direction('x')) >= self.init_energy_x[0]
+        #     assert abs(self._energy_in_direction('x')) <= self.init_energy_x[1]
+        #
+        # if abs(self._energy_in_direction('y')) < self.init_energy_y[0] or abs(self._energy_in_direction('y')) > \
+        #         self.init_energy_y[1]:
+        #     print('energy not conserved in y axis!')
+        #     print(f'actual: {abs(self._energy_in_direction("y")):.2f}')
+        #     print(f"expect: {self.init_energy_y[0]:.2f}, {self.init_energy_y[1]:.2f}")
+        #
+        #     assert abs(self._energy_in_direction('y')) >= self.init_energy_y[0]
+        #     assert abs(self._energy_in_direction('y')) <= self.init_energy_y[1]
+        #
+        # print('energy conserved!')
+        # print()
 
 class FPSobj:
     """
@@ -185,12 +303,10 @@ class FPSobj:
         """
         # first, remove any frames which should not be included.
         excess = len(self.frameTimeStamps) - self.numFrames
-        print()
         if excess > 0:
             self.frameTimeStamps = self.frameTimeStamps[excess:]
 
         # now, obtain the average time
-        print(f'last timestamp: {self.frameTimeStamps[-1:]}')
         avgFramesPerSecond = (len(self.frameTimeStamps) - 1) / (self.frameTimeStamps[-1:][0] - self.frameTimeStamps[0])
         return avgFramesPerSecond
 
@@ -266,7 +382,7 @@ def test_accuracy() -> None:
 
 
 
-    base_assertions.run_assertions()
+    base_assertions.run_all_assertions()
     # add extra collision if ball is moving to the right.
     # print 'invalid test' if magnitude of ball2 is greater than that of ball 1
     # at the end of the simulation
@@ -285,7 +401,7 @@ def test_accuracy() -> None:
     assert sim1.numCollisions <= calculated_pi + 1
 
 
-def test_template() -> None:
+def test_high_speed() -> None:
     """
     Just a template for tests
     :return:
@@ -301,7 +417,7 @@ def test_template() -> None:
     xStart2 = BUFFER + 100
 
     yStart1 = BUFFER + 100
-    yStart2 = BUFFER - 100
+    yStart2 = SCREEN_Y - BUFFER - 100
 
     ball1 = Ball(xStart1, yStart1, sizeBall, BALL_COLOR, mass1, DEBUG_COLOR, dt)
     ball2 = Ball(xStart2, yStart2, sizeBall, BALL_COLOR, mass2, DEBUG_COLOR, dt)
@@ -310,7 +426,7 @@ def test_template() -> None:
     sim1.addObjectToSimulation(ball2)
 
     ball1.modifyVelocity([-2000, 4000])
-    ball2.modifyVelocity([400, 3000])
+    ball2.modifyVelocity([4000, 3000])
 
     # newLine1 = DebugLine(50, 60, (0, 0))
     # newLine1.setFollowObject(ball1)
@@ -318,13 +434,12 @@ def test_template() -> None:
     # newLine2.setFollowObject(ball2)
 
     # number of secs sim should run
-    time_sim = 1
-    start = time.time()
-    diff = 0
+    num_steps = 300
+    curr_step = 1
 
     base_assertions = simulation_assertions(sim1)
     running = True
-    while running and diff <= time_sim:
+    while running and curr_step <= num_steps:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -336,18 +451,19 @@ def test_template() -> None:
 
         if visualize:
             sim1.draw(screen, 0)
-            pygame.display.update()
             if show_fps:
                 frame_shower.logAndDraw()
+            pygame.display.update()
 
-        diff = time.time() - start
+        curr_step += 1
 
-    base_assertions.run_assertions()
+
+    base_assertions.run_all_assertions()
 
 
 def test_vertical_drop() -> None:
     """
-    Tests edge cases for balls bouncing on weird axises
+    Tests edge cases for balls bouncing directly on the axis
     :param simulation:
     :return:
     """
@@ -371,13 +487,12 @@ def test_vertical_drop() -> None:
     sim1.addObjectToSimulation(newBall)
     sim1.addObjectToSimulation(ball2)
 
-    time_sim = 5
-    start = time.time()
-    diff = 0
+    num_steps = 800
+    curr_step = 1
 
     base_assertions = simulation_assertions(sim1)
     running = True
-    while running and diff <= time_sim:
+    while running and curr_step <= num_steps:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -389,15 +504,13 @@ def test_vertical_drop() -> None:
 
         if visualize:
             sim1.draw(screen, 0)
-            pygame.display.update()
             if show_fps:
                 frame_shower.logAndDraw()
+            pygame.display.update()
 
-        diff = time.time() - start
+        curr_step += 1
 
-    base_assertions.run_assertions()
-
-
+    base_assertions.run_all_assertions()
 
 
 def test_edge_case2(simulation) -> None:

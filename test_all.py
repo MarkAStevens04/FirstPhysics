@@ -18,7 +18,7 @@ screen = pygame.display.set_mode((SCREEN_X, SCREEN_Y), pygame.SCALED)
 pygame.display.set_caption("Test cases")
 FPS = 100
 DEBUG = True
-stepSize = 0.5
+stepSize = 1
 true_gravity = 1000
 precision = 0.00000000001
 FPSsim = 60
@@ -384,7 +384,7 @@ def test_single_drop() -> None:
 
     sizeBall = 50
 
-    mass1 = 10
+    mass1 = 1
 
     xStart1 = SCREEN_X / 2
     yStart1 = BUFFER + 100
@@ -400,6 +400,8 @@ def test_single_drop() -> None:
 
     base_assertions = simulation_assertions(sim1)
     running = True
+    print()
+    print('KE         |  Grav Potential  |  Total KE   |   y Pos  |  y Velocity')
     while running and curr_step <= num_steps:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -413,10 +415,13 @@ def test_single_drop() -> None:
         GravPE = base_assertions._GravPotential_single_calculation(ball1)
         KinE = base_assertions._KE_single_calculation(ball1, 1)
 
-        print(f'KE            : {KinE:.2f}')
-        print(f'Grav Potential: {GravPE:.2f}')
-        print(f'total KE : {KinE + GravPE:.2f}')
-        print()
+        if curr_step % 10 == 0:
+            # print(f'KE            : {KinE:010.2f}')
+            # print(f'Grav Potential:           {GravPE:010.2f}')
+            # print(f'total KE      :                  {KinE + GravPE:010.2f}')
+            print(f'{KinE:010.2f}    {GravPE:010.2f}        {KinE + GravPE:010.2f}     {ball1.y:05.2f}    {ball1.velocity[1]:.2f}')
+
+
 
         if visualize:
             sim1.draw(screen, 0)

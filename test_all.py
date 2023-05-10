@@ -18,7 +18,7 @@ screen = pygame.display.set_mode((SCREEN_X, SCREEN_Y), pygame.SCALED)
 pygame.display.set_caption("Test cases")
 FPS = 100
 DEBUG = True
-stepSize = 0.1
+stepSize = 0.01
 true_gravity = 1000
 precision = 0.00000000001
 FPSsim = 60
@@ -31,6 +31,9 @@ BALL_COLOR = (100, 100, 100)
 BORDER_COLOR = (255, 100, 100)
 DEBUG_COLOR = (100, 255, 100)
 
+
+# Maybe add a way to track the % completion of each test case? like just curr_step / total_steps
+# but then display that value
 
 class simulation_assertions:
     """
@@ -309,7 +312,7 @@ def test_accuracy() -> None:
     Checks accuracy of pi physics calculation
     """
     sim1 = Simulation(0, 0, SCREEN_X, SCREEN_Y, 0, precision, gravity, BORDER_COLOR, BUFFER, DEBUG_COLOR, dt)
-    ACCURACY = 2
+    ACCURACY = 3
 
     sizeBall = 25
 
@@ -476,7 +479,8 @@ def test_high_speed() -> None:
     # newLine2 = DebugLine(50, 60, (0, 0))
     # newLine2.setFollowObject(ball2)
 
-    # number of secs sim should run
+
+    # I know this might be a long sim, but I really like the collision at the end
     num_steps = 300 * (1/stepSize)
     curr_step = 1
 

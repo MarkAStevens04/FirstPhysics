@@ -620,7 +620,3 @@ def test_edge_case3(simulation) -> None:
 
     newLine = DebugLine(50, 60, (0, 0))
     newLine.setFollowObject(ball2)
-
-
-if __name__ == '__main__':
-    print('only running this?')

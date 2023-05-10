@@ -796,18 +796,19 @@ class Simulation:
         newLine = DebugLine(50, 60, (0, 0))
         newLine.setFollowObject(newBall)
 
-    def draw(self, sc, index: float):
+    def draw(self, sc, index: float) -> None:
         """
-        draws all objects to the screen. Also rainbowifys the balls
+        Draws all objects to the screen. Also rainbowifys the balls
         :param sc: screen to draw on
         :param index: float from 0 to 1 of where the simulation is
-        :return:
+        :return: None
         """
         for edge in self.border:
             edge.draw(sc)
 
         if global_.COLORIFY:
             rainbowColors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+
 
         for obj in self.objects:
             if global_.COLORIFY:
@@ -878,7 +879,7 @@ class Ball:
         self.x += coords[0]
         self.y += coords[1]
 
-    def modifyVelocity(self, newVelocity: list[float, float]):
+    def modifyVelocity(self, newVelocity: list[float, float]) -> None:
         self.velocity[0] = self.velocity[0] + newVelocity[0]
         self.velocity[1] = self.velocity[1] + newVelocity[1]
 

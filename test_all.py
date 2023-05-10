@@ -251,6 +251,7 @@ class simulation_assertions:
         self.energy_assertion('x')
         self.energy_assertion('y')
 
+
 class FPSobj:
     """
     an object which tracks everything for FPS
@@ -299,9 +300,11 @@ class FPSobj:
         img = global_.my_font.render(f'{self.avg:.0f}', True, (255, 255, 255))
         self.sc.blit(img, (self.x, self.y))
 
+
 # initializing stuff
 if show_fps:
     frame_shower = FPSobj(screen)
+
 
 def test_tests():
     assert 1 == 1

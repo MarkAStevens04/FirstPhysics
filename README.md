@@ -1,8 +1,8 @@
 # FirstPhysics
 **= Purpose =**
 The purpose of this project is to gain experience in modeling physical systems using computer science. 
-This simulation is not meant to accurately predict real world scenarios, but is rather designed to provide results which look realistic.
-All methods are, however, based in physical laws of the Universe.
+This simulation is not meant to accurately predict real-world scenarios, but is rather designed to provide results that mimic reality.
+All methods are based in the physical laws of our Universe.
 
 **= Overview of design =**
 Because accuracy is not required, and simplicity is prioritized, the explicit Euler method was chosen.
